@@ -20,8 +20,13 @@ from langchain_groq import ChatGroq
 
 @st.cache_resource
 def get_embeddings():
-    """Initializes and caches HuggingFace embeddings model."""
-    return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    model_kwargs = {'device': 'cpu'}
+    encode_kwargs = {'normalize_embeddings': True}
+    return HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2", # Full model path
+        model_kwargs=model_kwargs,
+        encode_kwargs=encode_kwargs
+    )
 
 
 def list_existing_files(docs_dir="docs", allowed_extensions=(".pdf", ".csv")):
