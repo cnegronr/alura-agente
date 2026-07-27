@@ -48,10 +48,10 @@ def process_pdf(uploaded_file):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
     chunks = text_splitter.split_documents(documents)
 
-    # Ensure page metadata is set on all chunks
+    # Ensure page metadata is set and 1-indexed on all chunks
     for chunk in chunks:
-        if "page" not in chunk.metadata:
-            chunk.metadata["page"] = 0
+        raw_page = chunk.metadata.get("page", 0)
+        chunk.metadata["page"] = raw_page + 1
 
     embeddings = get_embeddings()
     vectorstore = FAISS.from_documents(chunks, embeddings)
@@ -98,7 +98,7 @@ def build_rag_chain(retriever):
         "Si la respuesta no se encuentra en el contexto, indica claramente:\n"
         "'No encontré información sobre este tema en el documento proporcionado.'\n"
         "Para cada punto o respuesta, cita siempre el número de página correspondiente del PDF "
-        "(revisa la metadata 'page', considerando que la página 0 corresponde a la Página 1)."
+        "(por ejemplo, Página 1)."
     )
 
     prompt = ChatPromptTemplate.from_messages(
@@ -111,7 +111,7 @@ def build_rag_chain(retriever):
 
     document_prompt = PromptTemplate(
         input_variables=["page_content", "page"],
-        template="[Metadata 'page': {page}]\n{page_content}"
+        template="[Página: {page}]\n{page_content}"
     )
 
     question_answer_chain = create_stuff_documents_chain(
@@ -179,7 +179,7 @@ if uploaded_file:
                 if isinstance(response, dict) and "context" in response and response["context"]:
                     with st.expander("📌 Fuentes citadas / Páginas"):
                         for i, doc in enumerate(response["context"]):
-                            page_num = doc.metadata.get("page", 0) + 1
+                            page_num = doc.metadata.get("page", 1)
                             st.write(f"**Página {page_num}:**")
                             st.caption(doc.page_content[:300] + ("..." if len(doc.page_content) > 300 else ""))
 
