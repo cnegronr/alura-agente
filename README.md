@@ -1,0 +1,73 @@
+# PDF Agent
+
+An AI agent that answers questions about the content of a PDF file.
+
+## Description
+
+This project implements a retrieval-augmented generation (RAG) system that enables intelligent question-answering over PDF documents. The agent processes PDF files, creates semantic embeddings, and uses a language model to answer user queries based on the document content with cited page references.
+
+## Tech Stack
+
+- **Language Model**: 
+  - Groq (`langchain-groq`) - High-speed inference for `llama-3.3-70b-versatile`
+
+- **Embeddings & Vector Store**:
+  - HuggingFace Embeddings (`langchain-huggingface`) - `all-MiniLM-L6-v2` model
+  - FAISS (`faiss-cpu`) - Efficient vector similarity search
+
+- **Framework**:
+  - LangChain ecosystem:
+    - `langchain` - Core framework
+    - `langchain-core` - Base abstractions
+    - `langchain-community` - Community integrations
+    - `langchain-classic` - Deprecated chains (for compatibility with Alura course content)
+    - `langchain-text-splitters` - Text chunking utilities
+
+- **Document Processing**:
+  - `pypdf` - PDF loading and parsing
+
+## Setup
+
+### Prerequisites
+- Python 3.14+
+- API Key for Groq (set as environment variable `GROQ_API_KEY`)
+
+### Installation
+
+1. **Clone or navigate to the project directory**:
+   ```bash
+   cd pdf-agent
+   ```
+
+2. **Create and activate a virtual environment**:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # macOS/Linux
+   # or
+   .venv\Scripts\activate  # Windows
+   ```
+
+
+
+## Project Files
+
+- `README.md` - This file
+
+
+
+## Environment Variables
+
+- `GROQ_API_KEY` - API key for Groq LLM service (required)
+
+## Notes
+
+- The HuggingFace `all-MiniLM-L6-v2` model is lightweight and efficient for semantic search
+- Groq provides fast inference at scale for the Llama 3.3 70B model
+- FAISS is optimized for CPU-based similarity search
+- Document chunks overlap by 150 characters to maintain context continuity
+
+## Author
+
+Carlos Negrón
+
+[LinkedIn](https://www.linkedin.com/in/carlosnegron/)
