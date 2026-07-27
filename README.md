@@ -47,13 +47,38 @@ This project implements a retrieval-augmented generation (RAG) system that enabl
    .venv\Scripts\activate  # Windows
    ```
 
+3. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
+4. **Set up environment variables**:
+   Create a `.env` file in the project root:
+   ```env
+   GROQ_API_KEY=your_groq_api_key_here
+   ```
+
+### Running the Agent
+
+#### Option 1: From Terminal
+```bash
+streamlit run app.py 
+```
 
 ## Project Files
 
+- `app.py` - Agent implementation with UI
+- `requirements.txt` - Python package dependencies with pinned versions
 - `README.md` - This file
 
+## Features
 
+✅ PDF document loading and processing  
+✅ Semantic text chunking (1000 chars with 150 char overlap)  
+✅ Vector embeddings using HuggingFace (`all-MiniLM-L6-v2`)  
+✅ FAISS-based similarity search  
+✅ LLM-powered question answering with context awareness  
+ 
 
 ## Environment Variables
 
