@@ -78,6 +78,7 @@ streamlit run app.py
 ✅ Vector embeddings using HuggingFace (`all-MiniLM-L6-v2`)  
 ✅ FAISS-based similarity search  
 ✅ LLM-powered question answering with context awareness  
+✅ Download each assistant response as a `.md` file  
  
 
 ## Environment Variables

@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, AIMessage
 
 # Import modular tools and functions from tools.py
-from tools import process_pdf, build_rag_chain, invocar_agente_con_retry
+from tools import process_pdf, build_rag_chain, invocar_agente_con_retry, format_response_md
 
 # Load environment variables
 load_dotenv()
@@ -39,9 +39,27 @@ if uploaded_file:
         st.session_state.chat_history = []
 
     # Display prior chat history
-    for message in st.session_state.messages:
+    for idx, message in enumerate(st.session_state.messages):
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
+            if message["role"] == "assistant":
+                user_q = message.get("user_query")
+                if not user_q and idx > 0 and st.session_state.messages[idx - 1]["role"] == "user":
+                    user_q = st.session_state.messages[idx - 1]["content"]
+
+                formatted_md = format_response_md(
+                    answer=message["content"],
+                    user_query=user_q,
+                    filename=st.session_state.get("current_file"),
+                    sources=message.get("sources")
+                )
+                st.download_button(
+                    label="📥 Descargar respuesta (.md)",
+                    data=formatted_md,
+                    file_name=f"respuesta_{idx // 2 + 1}.md",
+                    mime="text/markdown",
+                    key=f"download_{idx}"
+                )
 
     # User input prompt
     if user_input := st.chat_input("Haz una pregunta sobre el documento..."):
@@ -68,15 +86,38 @@ if uploaded_file:
                 answer = response.get("answer") if isinstance(response, dict) else response
                 st.markdown(answer)
 
+                sources = []
                 if isinstance(response, dict) and response.get("context"):
                     with st.expander("📌 Fuentes citadas / Páginas"):
                         for doc in response["context"]:
                             page_num = doc.metadata.get("page", 1)
+                            snippet = doc.page_content[:300] + ("..." if len(doc.page_content) > 300 else "")
+                            sources.append({"page": page_num, "content": snippet})
                             st.write(f"**Página {page_num}:**")
-                            st.caption(doc.page_content[:300] + ("..." if len(doc.page_content) > 300 else ""))
+                            st.caption(snippet)
 
-        # Save assistant response to history
-        st.session_state.messages.append({"role": "assistant", "content": answer})
-        st.session_state.chat_history.append({"role": "assistant", "content": answer})
+            # Save assistant response to history
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": answer,
+                "user_query": user_input,
+                "sources": sources
+            })
+            st.session_state.chat_history.append({"role": "assistant", "content": answer})
+
+            assistant_idx = len(st.session_state.messages) - 1
+            formatted_md = format_response_md(
+                answer=answer,
+                user_query=user_input,
+                filename=st.session_state.get("current_file"),
+                sources=sources
+            )
+            st.download_button(
+                label="📥 Descargar respuesta (.md)",
+                data=formatted_md,
+                file_name=f"respuesta_{assistant_idx // 2 + 1}.md",
+                mime="text/markdown",
+                key=f"download_{assistant_idx}"
+            )
 else:
     st.info("Por favor, sube un archivo PDF desde el panel lateral para empezar.")

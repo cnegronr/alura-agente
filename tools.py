@@ -1,6 +1,7 @@
 import os
 import tempfile
 import time
+from datetime import datetime
 import streamlit as st
 from dotenv import load_dotenv
 
@@ -112,3 +113,35 @@ def invocar_agente_con_retry(cadena, inputs, max_retries=3):
                 time.sleep(5 * (2 ** i))
                 continue
             raise e
+
+
+def format_response_md(answer, user_query=None, filename=None, sources=None):
+    """Formats assistant response into a structured Markdown document."""
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    md_lines = ["# 📄 Respuesta del Asistente PDF\n"]
+
+    metadata_lines = []
+    if filename:
+        metadata_lines.append(f"**Documento:** `{filename}`")
+    metadata_lines.append(f"**Fecha de generación:** {now_str}")
+    md_lines.append("  \n".join(metadata_lines))
+    md_lines.append("\n---\n")
+
+    if user_query:
+        md_lines.append("### ❓ Pregunta")
+        md_lines.append(f"> {user_query}\n")
+        md_lines.append("---\n")
+
+    md_lines.append("### 💡 Respuesta\n")
+    md_lines.append(answer)
+
+    if sources:
+        md_lines.append("\n\n---\n")
+        md_lines.append("### 📌 Fuentes Citadas\n")
+        for source in sources:
+            page = source.get("page", 1)
+            content = source.get("content", "").strip()
+            md_lines.append(f"- **Página {page}:** {content}")
+
+    return "\n".join(md_lines)
+
