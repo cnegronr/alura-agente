@@ -9,5 +9,5 @@ pypdf==6.14.2
 pandas==2.2.3
 faiss-cpu==1.14.3
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch
+torch==2.13.0
 sentence-transformers==3.4.1
