@@ -2,11 +2,13 @@ import os
 import tempfile
 import time
 from datetime import datetime
+import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
 # LangChain imports
 from langchain_community.document_loaders import PyPDFLoader
+from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -22,43 +24,96 @@ def get_embeddings():
     return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 
-def list_existing_pdfs(docs_dir="docs"):
-    """Lists all PDF files in the specified directory."""
+def list_existing_files(docs_dir="docs", allowed_extensions=(".pdf", ".csv")):
+    """Lists all supported files (PDF, CSV) in the specified directory."""
     if not os.path.exists(docs_dir):
         return []
     return [
         f for f in os.listdir(docs_dir)
-        if f.lower().endswith(".pdf") and os.path.isfile(os.path.join(docs_dir, f))
+        if f.lower().endswith(allowed_extensions) and os.path.isfile(os.path.join(docs_dir, f))
     ]
 
 
-def process_pdf(file_source):
-    """Processes uploaded PDF file or local PDF file path into a FAISS vectorstore retriever."""
-    if isinstance(file_source, (str, os.PathLike)):
-        loader = PyPDFLoader(str(file_source))
-        documents = loader.load()
-    elif hasattr(file_source, "getvalue"):
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-            tmp_file.write(file_source.getvalue())
-            tmp_path = tmp_file.name
+def list_existing_pdfs(docs_dir="docs"):
+    """Backward compatible alias for list_existing_files."""
+    return list_existing_files(docs_dir=docs_dir)
 
-        loader = PyPDFLoader(tmp_path)
-        documents = loader.load()
-        os.remove(tmp_path)  # Clean up temporary file
+
+def load_csv_with_pandas(file_source):
+    """Loads CSV file using pandas and converts rows into LangChain Document objects."""
+    try:
+        if isinstance(file_source, (str, os.PathLike)):
+            df = pd.read_csv(str(file_source))
+        elif hasattr(file_source, "getvalue"):
+            df = pd.read_csv(file_source)
+        elif hasattr(file_source, "read"):
+            df = pd.read_csv(file_source)
+        else:
+            raise ValueError("Unsupported file source for CSV.")
+    except Exception:
+        if isinstance(file_source, (str, os.PathLike)):
+            df = pd.read_csv(str(file_source), encoding="latin1")
+        elif hasattr(file_source, "seek"):
+            file_source.seek(0)
+            df = pd.read_csv(file_source, encoding="latin1")
+        else:
+            raise
+
+    documents = []
+    for idx, row in df.iterrows():
+        row_str = ", ".join([f"{col}: {val}" for col, val in row.items() if pd.notna(val)])
+        if row_str.strip():
+            metadata = {"page": idx + 1, "row": idx + 1}
+            documents.append(Document(page_content=row_str, metadata=metadata))
+    return documents
+
+
+def process_file(file_source, filename=None):
+    """Processes uploaded or local PDF/CSV file into a FAISS vectorstore retriever using PyPDF or Pandas."""
+    if filename is None:
+        if isinstance(file_source, (str, os.PathLike)):
+            filename = str(file_source)
+        elif hasattr(file_source, "name"):
+            filename = file_source.name
+        else:
+            filename = ""
+
+    ext = os.path.splitext(filename)[1].lower()
+
+    if ext == ".csv":
+        documents = load_csv_with_pandas(file_source)
     else:
-        raise ValueError("Unsupported file source. Must be a file path string or uploaded file object.")
+        # Default to PDF processing
+        if isinstance(file_source, (str, os.PathLike)):
+            loader = PyPDFLoader(str(file_source))
+            documents = loader.load()
+        elif hasattr(file_source, "getvalue"):
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+                tmp_file.write(file_source.getvalue())
+                tmp_path = tmp_file.name
+
+            loader = PyPDFLoader(tmp_path)
+            documents = loader.load()
+            os.remove(tmp_path)  # Clean up temporary file
+        else:
+            raise ValueError("Unsupported file source. Must be a file path string or uploaded file object.")
+
+        for doc in documents:
+            raw_page = doc.metadata.get("page", 0)
+            doc.metadata["page"] = raw_page + 1
 
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
     chunks = text_splitter.split_documents(documents)
 
-    # Ensure page metadata is set and 1-indexed on all chunks
-    for chunk in chunks:
-        raw_page = chunk.metadata.get("page", 0)
-        chunk.metadata["page"] = raw_page + 1
-
     embeddings = get_embeddings()
     vectorstore = FAISS.from_documents(chunks, embeddings)
     return vectorstore.as_retriever(search_kwargs={"k": 4})
+
+
+def process_pdf(file_source):
+    """Backward compatible alias for process_file."""
+    return process_file(file_source)
+
 
 def build_rag_chain(retriever):
     """Builds history-aware RAG chain with page citations."""
@@ -98,8 +153,8 @@ def build_rag_chain(retriever):
         "{context}\n"
         "Si la respuesta no se encuentra en el contexto, indica claramente:\n"
         "'No encontré información sobre este tema en el documento proporcionado.'\n"
-        "Para cada punto o respuesta, cita siempre el número de página correspondiente del PDF "
-        "(por ejemplo, Página 1)."
+        "Para cada punto o respuesta, cita siempre el número de página o fila correspondiente "
+        "(por ejemplo, Página 1 o Fila 1)."
     )
 
     prompt = ChatPromptTemplate.from_messages([
@@ -110,7 +165,7 @@ def build_rag_chain(retriever):
 
     document_prompt = PromptTemplate(
         input_variables=["page_content", "page"],
-        template="[Página: {page}]\n{page_content}"
+        template="[Página/Fila: {page}]\n{page_content}"
     )
 
     question_answer_chain = create_stuff_documents_chain(
@@ -134,7 +189,7 @@ def invocar_agente_con_retry(cadena, inputs, max_retries=3):
 def format_response_md(answer, user_query=None, filename=None, sources=None):
     """Formats assistant response into a structured Markdown document."""
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    md_lines = ["# 📄 Respuesta del Asistente PDF\n"]
+    md_lines = ["# 📄 Respuesta del Asistente\n"]
 
     metadata_lines = []
     if filename:
@@ -157,7 +212,6 @@ def format_response_md(answer, user_query=None, filename=None, sources=None):
         for source in sources:
             page = source.get("page", 1)
             content = source.get("content", "").strip()
-            md_lines.append(f"- **Página {page}:** {content}")
+            md_lines.append(f"- **Página/Fila {page}:** {content}")
 
     return "\n".join(md_lines)
-

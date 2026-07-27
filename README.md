@@ -25,6 +25,7 @@ This project implements a retrieval-augmented generation (RAG) system that enabl
 
 - **Document Processing**:
   - `pypdf` - PDF loading and parsing
+  - `pandas` - CSV / CVS dataset parsing and row-level document conversion
 
 ## Setup
 
@@ -73,8 +74,8 @@ streamlit run app.py
 
 ## Features
 
-✅ PDF document loading and processing  
-✅ Select existing PDFs from `docs/` folder or upload new PDFs  
+✅ PDF and CSV/CVS document loading and processing using `pandas`  
+✅ Select existing files (PDF/CSV) from `docs/` folder or upload new files  
 ✅ Semantic text chunking (1000 chars with 150 char overlap)  
 ✅ Vector embeddings using HuggingFace (`all-MiniLM-L6-v2`)  
 ✅ FAISS-based similarity search  
