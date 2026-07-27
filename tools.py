@@ -22,15 +22,31 @@ def get_embeddings():
     return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 
-def process_pdf(uploaded_file):
-    """Processes uploaded PDF file into a FAISS vectorstore retriever."""
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-        tmp_file.write(uploaded_file.getvalue())
-        tmp_path = tmp_file.name
+def list_existing_pdfs(docs_dir="docs"):
+    """Lists all PDF files in the specified directory."""
+    if not os.path.exists(docs_dir):
+        return []
+    return [
+        f for f in os.listdir(docs_dir)
+        if f.lower().endswith(".pdf") and os.path.isfile(os.path.join(docs_dir, f))
+    ]
 
-    loader = PyPDFLoader(tmp_path)
-    documents = loader.load()
-    os.remove(tmp_path)  # Clean up temporary file
+
+def process_pdf(file_source):
+    """Processes uploaded PDF file or local PDF file path into a FAISS vectorstore retriever."""
+    if isinstance(file_source, (str, os.PathLike)):
+        loader = PyPDFLoader(str(file_source))
+        documents = loader.load()
+    elif hasattr(file_source, "getvalue"):
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+            tmp_file.write(file_source.getvalue())
+            tmp_path = tmp_file.name
+
+        loader = PyPDFLoader(tmp_path)
+        documents = loader.load()
+        os.remove(tmp_path)  # Clean up temporary file
+    else:
+        raise ValueError("Unsupported file source. Must be a file path string or uploaded file object.")
 
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
     chunks = text_splitter.split_documents(documents)

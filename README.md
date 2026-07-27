@@ -74,6 +74,7 @@ streamlit run app.py
 ## Features
 
 ✅ PDF document loading and processing  
+✅ Select existing PDFs from `docs/` folder or upload new PDFs  
 ✅ Semantic text chunking (1000 chars with 150 char overlap)  
 ✅ Vector embeddings using HuggingFace (`all-MiniLM-L6-v2`)  
 ✅ FAISS-based similarity search  

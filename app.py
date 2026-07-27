@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, AIMessage
 
 # Import modular tools and functions from tools.py
-from tools import process_pdf, build_rag_chain, invocar_agente_con_retry, format_response_md
+from tools import process_pdf, build_rag_chain, invocar_agente_con_retry, format_response_md, list_existing_pdfs
 
 # Load environment variables
 load_dotenv()
@@ -18,19 +18,51 @@ if not os.getenv("GROQ_API_KEY"):
     st.error("GROQ_API_KEY is missing. Please set it in your .env file.")
     st.stop()
 
-# --- UI Sidebar for Upload ---
+# --- UI Sidebar for Document Selection / Upload ---
 st.sidebar.header("Document Setup")
-uploaded_file = st.sidebar.file_uploader("Subir un archivo PDF", type=["pdf"])
 
-if uploaded_file:
+docs_dir = "docs"
+existing_pdfs = list_existing_pdfs(docs_dir)
+
+source_option = st.sidebar.radio(
+    "Selecciona la fuente del documento:",
+    options=["Archivos en docs/", "Subir nuevo PDF"],
+    index=None
+)
+
+selected_file_source = None
+file_identifier = None
+
+if source_option == "Archivos en docs/":
+    if existing_pdfs:
+        selected_pdf_name = st.sidebar.selectbox(
+            "Selecciona un PDF de la carpeta docs/",
+            options=sorted(existing_pdfs),
+            index=None,
+            placeholder="Selecciona un archivo PDF..."
+        )
+        if selected_pdf_name:
+            selected_file_source = os.path.join(docs_dir, selected_pdf_name)
+            file_identifier = selected_pdf_name
+    else:
+        st.sidebar.info("No se encontraron archivos PDF en la carpeta 'docs/'.")
+elif source_option == "Subir nuevo PDF":
+    uploaded_file = st.sidebar.file_uploader("Subir un archivo PDF", type=["pdf"])
+    if uploaded_file:
+        selected_file_source = uploaded_file
+        file_identifier = uploaded_file.name
+
+if selected_file_source:
     with st.spinner("Procesando el archivo PDF..."):
         # Cache chain per file session
-        if "rag_chain" not in st.session_state or st.session_state.get("current_file") != uploaded_file.name:
-            retriever = process_pdf(uploaded_file)
+        if "rag_chain" not in st.session_state or st.session_state.get("current_file") != file_identifier:
+            retriever = process_pdf(selected_file_source)
             st.session_state.rag_chain = build_rag_chain(retriever)
-            st.session_state.current_file = uploaded_file.name
+            st.session_state.current_file = file_identifier
+            st.session_state.messages = []
+            st.session_state.chat_history = []
 
-    st.sidebar.success("PDF procesado exitosamente")
+    st.sidebar.success(f"PDF '{file_identifier}' procesado exitosamente")
 
     # --- Chat Interface State Initialization ---
     if "messages" not in st.session_state:
@@ -120,4 +152,4 @@ if uploaded_file:
                 key=f"download_{assistant_idx}"
             )
 else:
-    st.info("Por favor, sube un archivo PDF desde el panel lateral para empezar.")
+    st.info("Por favor, selecciona o sube un archivo PDF desde el panel lateral para empezar.")
