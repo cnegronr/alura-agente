@@ -1,4 +1,4 @@
-# PDF Agent
+# Document Q&A Agent
 
 An AI agent that answers questions about the content of a PDF file.
 
@@ -32,6 +32,7 @@ This project implements a retrieval-augmented generation (RAG) system that enabl
 ### Prerequisites
 - Python 3.14+
 - API Key for Groq (set as environment variable `GROQ_API_KEY`)
+- API Key for HuggingFace (set as environment variable `HUGGINGFACEHUB_API_TOKEN`)
 
 ### Installation
 
@@ -57,6 +58,7 @@ This project implements a retrieval-augmented generation (RAG) system that enabl
    Create a `.env` file in the project root:
    ```env
    GROQ_API_KEY=your_groq_api_key_here
+   HUGGINGFACEHUB_API_TOKEN=your_groq_api_key_here
    ```
 
 ### Running the Agent
@@ -68,13 +70,14 @@ streamlit run app.py
 
 ## Project Files
 
-- `app.py` - Agent implementation with UI
+- `app.py` - Agent implementation UI focused
+- `tools.py`- Agent tools implementation
 - `requirements.txt` - Python package dependencies with pinned versions
 - `README.md` - This file
 
 ## Features
 
-✅ PDF and CSV/CVS document loading and processing using `pandas`  
+✅ PDF and CSV/CVS document loading and processing using `pypdf` & `pandas`  
 ✅ Select existing files (PDF/CSV) from `docs/` folder or upload new files  
 ✅ Semantic text chunking (1000 chars with 150 char overlap)  
 ✅ Vector embeddings using HuggingFace (`all-MiniLM-L6-v2`)  
@@ -82,10 +85,11 @@ streamlit run app.py
 ✅ LLM-powered question answering with context awareness  
 ✅ Download each assistant response as a `.md` file  
  
-
 ## Environment Variables
 
 - `GROQ_API_KEY` - API key for Groq LLM service (required)
+- `HUGGINGFACEHUB_API_TOKEN` - API key for HUGGING FACE service (required)
+
 
 ## Notes
 
@@ -93,6 +97,29 @@ streamlit run app.py
 - Groq provides fast inference at scale for the Llama 3.3 70B model
 - FAISS is optimized for CPU-based similarity search
 - Document chunks overlap by 150 characters to maintain context continuity
+
+## Use
+
+- Simply navigate to the left panel and choose/upload a document, and start asking questions
+- You can download an answer in md file format just pressing the download button below
+- You can check the page/row numbers used to get the answer
+
+
+---
+
+![01](./screenshots/01.png)
+---
+![02](./screenshots/02.png)
+---
+![03](./screenshots/03.png)
+---
+![04](./screenshots/04.png)
+
+---
+
+## URL
+
+[Docs Alura Agent](https://docs-agent-cnegronr.streamlit.app/)
 
 ## Author
 
