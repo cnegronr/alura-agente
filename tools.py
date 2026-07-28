@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings, HuggingFaceEndpointEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_classic.chains import create_retrieval_chain, create_history_aware_retriever
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
@@ -19,14 +19,11 @@ from langchain_core.runnables import RunnableLambda
 from langchain_groq import ChatGroq
 
 @st.cache_resource
+@st.cache_resource
 def get_embeddings():
-    model_kwargs = {'device': 'cpu'}
-    encode_kwargs = {'normalize_embeddings': True}
-    return HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2",
-        model_kwargs=model_kwargs,
-        encode_kwargs=encode_kwargs,
-        cache_folder="/tmp/huggingface_models"  # Add this line
+    return HuggingFaceEndpointEmbeddings(
+        model="sentence-transformers/all-MiniLM-L6-v2",
+        huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN")
     )
 
 
