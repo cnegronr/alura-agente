@@ -25,8 +25,6 @@ if not os.getenv("GROQ_API_KEY"):
     st.error("GROQ_API_KEY is missing. Please set it in your .env file.")
     st.stop()
 
-with st.spinner("⏳ Loading embedding model (first run only)..."):
-    _ = get_embeddings()
 # --- UI Sidebar for Document Selection / Upload ---
 st.sidebar.header("Document Setup")
 
