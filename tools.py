@@ -23,9 +23,10 @@ def get_embeddings():
     model_kwargs = {'device': 'cpu'}
     encode_kwargs = {'normalize_embeddings': True}
     return HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2", # Full model path
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
         model_kwargs=model_kwargs,
-        encode_kwargs=encode_kwargs
+        encode_kwargs=encode_kwargs,
+        cache_folder="/tmp/huggingface_models"  # Add this line
     )
 
 
