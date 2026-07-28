@@ -1,11 +1,11 @@
 import os
 import streamlit as st
 from dotenv import load_dotenv
+import torch
 from langchain_core.messages import HumanMessage, AIMessage
 
 # Import modular tools and functions from tools.py
 from tools import (
-    get_embeddings,
     process_file,
     build_rag_chain,
     invocar_agente_con_retry,
@@ -24,6 +24,9 @@ st.title("📄 Document Q&A Agent")
 if not os.getenv("GROQ_API_KEY"):
     st.error("GROQ_API_KEY is missing. Please set it in your .env file.")
     st.stop()
+
+# Fix Streamlit module inspection conflict with PyTorch
+torch.classes.__path__ = []
 
 # --- UI Sidebar for Document Selection / Upload ---
 st.sidebar.header("Document Setup")
