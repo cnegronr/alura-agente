@@ -1,10 +1,10 @@
 # Document Q&A Agent
 
-An AI agent that answers questions about the content of a PDF file.
+An AI agent that answers questions about the content of a PDF/CSV file.
 
 ## Description
 
-This project implements a retrieval-augmented generation (RAG) system that enables intelligent question-answering over PDF documents. The agent processes PDF files, creates semantic embeddings, and uses a language model to answer user queries based on the document content with cited page references.
+This project implements a retrieval-augmented generation (RAG) system that enables intelligent question-answering over PDF/CSV documents. The agent processes PDF/CSV files, creates semantic embeddings, and uses a language model to answer user queries based on the document content with cited page references.
 
 ## Tech Stack
 
@@ -25,7 +25,7 @@ This project implements a retrieval-augmented generation (RAG) system that enabl
 
 - **Document Processing**:
   - `pypdf` - PDF loading and parsing
-  - `pandas` - CSV / CVS dataset parsing and row-level document conversion
+  - `pandas` - CSV dataset parsing and row-level document conversion
 
 ## Setup
 
@@ -77,7 +77,7 @@ streamlit run app.py
 
 ## Features
 
-✅ PDF and CSV/CVS document loading and processing using `pypdf` & `pandas`  
+✅ PDF and CSV document loading and processing using `pypdf` & `pandas`  
 ✅ Select existing files (PDF/CSV) from `docs/` folder or upload new files  
 ✅ Semantic text chunking (1000 chars with 150 char overlap)  
 ✅ Vector embeddings using HuggingFace (`all-MiniLM-L6-v2`)  
